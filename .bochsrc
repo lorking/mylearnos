@@ -1,0 +1,7 @@
+#size of memory
+megs: 128
+romimage: file=/usr/share/bochs/BIOS-bochs-latest
+vgaromimage: file=/usr/share/bochs/VGABIOS-lgpl-latest
+floppya: 1_44=floppy.img, status=inserted
+boot: a
+mouse: enabled=0
