@@ -1,5 +1,13 @@
 #ifndef _IDT_H
 #define _IDT_H
+	//定义的中断压栈后的参数
+	struct regs_struct
+	{
+		unsigned int gs,fs,es,ds;
+		unsigned int edi,esi,ebp,esp,ebx,edx,ecx,eax;
+		unsigned int int_no,err_code;//中断号和错误代码
+		unsigned int eip,cs,eflags,useresp,ss;//自动压栈的参数
+	};
 	//IDT的定义
 	struct idt_entry
 	{

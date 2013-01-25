@@ -34,14 +34,15 @@ void gdt_init()
 }
 void kmain()
 {
-	disable_int();
 	gdt_init();//初始化gdt
 	gdt_flush();//刷新gdt
 	clear();
 	reset_int_gate();//设置中断门
 	idt_init();//创建中断向量表
-	enable_timer(1000);//允许定时器中断
+	enable_timer(100);//允许定时器中断
 	enable_int();//允许中断
+	//__asm__ __volatile__("int $0x1");
+	//int a = 1 /0;
 	for(;;)
 	{
 	}

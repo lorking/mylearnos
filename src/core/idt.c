@@ -5,44 +5,89 @@
 extern struct idt_entry idt[256];
 extern struct idt_ptr	idtp;
 extern void idt_flush();
-//中断函数
-void is0();//中断为0的函数
-void is1();
-void is2();
-void is3();
-void is4();
-void is5();
-void is6();
-void is7();
-void is8(unsigned char c);
-void is9();
-void is10(unsigned char c);
-void is11(unsigned char c);
-void is12(unsigned char c);
-void is13(unsigned char c);
-void is14(unsigned char c);
-void is15();
-void is16();
-void is17();
-void is18();
-void is19_31();
+//错误消息列表
+char * error_msg [20] = {"Division By Zero Exception\n","Debug exception\n","Non maskable interrupt\n","Breakpoint exception\n",
+	"Into detected overflow\n","Out of bounds exception\n","Invalid Opcode Exception\n",
+	"No coprocessor exception\n","Double fault,error code:%d\n","Coprocessor segment overrun\n",
+	"Bad TSS:%d\n","Segment not present:%d\n","Stack Fault Exception:%d\n",
+	"General protection fault:%d\n","Page fault:%d\n","Unknown interrupt exception\n"
+	,"Coprocessor fault\n","Alignment check exception\n","Machine check exception\n","Reserved\n"}; 
+//中断函数指针数组
+void (* func_array[15])();
+//中断函数的处理函数
+void ir32_handler();
+void ir33_handler();
+void ir34_handler();
+void ir35_handler();
+void ir36_handler();
+void ir37_handler();
+void ir38_handler();
+void ir39_handler();
+void ir40_handler();
+void ir41_handler();
+void ir42_handler();
+void ir43_handler();
+void ir44_handler();
+void ir45_handler();
+void ir46_handler();
+
+void extern is0();//中断为0的函数
+void extern is1();
+void extern is2();
+void extern is3();
+void extern is4();
+void extern is5();
+void extern is6();
+void extern is7();
+void extern is8();
+void extern is9();
+void extern is10();
+void extern is11();
+void extern is12();
+void extern is13();
+void extern is14();
+void extern is15();
+void extern is16();
+void extern is17();
+void extern is18();
+void extern is19_31();
 //中断服务函数
-void ir32();
-void ir33();
-void ir34();
-void ir35();
-void ir36();
-void ir37();
-void ir38();
-void ir39();
-void ir40();
-void ir41();
-void ir42();
-void ir43();
-void ir44();
-void ir45();
-void ir46();
-void ir47();
+extern void ir32();
+extern void ir33();
+extern void ir34();
+extern void ir35();
+extern void ir36();
+extern void ir37();
+extern void ir38();
+extern void ir39();
+extern void ir40();
+extern void ir41();
+extern void ir42();
+extern void ir43();
+extern void ir44();
+extern void ir45();
+extern void ir46();
+//错误处理函数
+void interrupt_handler(struct regs_struct * reg)
+{
+	int index = reg->int_no;
+	int err_code = reg->err_code;
+	if(index == 8 || index == 10 ||index == 11 || index == 12 || index == 13 || index == 14)
+	{
+		printk(error_msg[index],err_code);
+		for(;;);
+	}else if(index >= 32 && index <=46)
+	{
+		void (*f) ();
+		f = func_array[index - 32];
+		f();
+		send_EOI(index);
+	}else
+	{
+		printk(error_msg[index]);
+		for(;;);
+	}
+}
 //设置定时器的divisor
 void enable_timer(unsigned int hz)
 {
@@ -59,7 +104,6 @@ void send_EOI(unsigned short i_num)
 		outportb(0xA0, 0x20);
 	}
 	outportb(0x20, 0x20);
-	//enable_int();
 }
 //重新设置中断门
 void reset_int_gate()
@@ -149,186 +193,88 @@ void idt_init()
 	idt_set_int_gate(30,(unsigned int)is19_31,0x08,0x8b);
 	idt_set_int_gate(31,(unsigned int)is19_31,0x08,0x8b);
 
-	idt_set_trap_gate(32,(unsigned int)ir32,0x08,0x8b);
-	idt_set_trap_gate(33,(unsigned int)ir33,0x08,0x8b);
-	idt_set_trap_gate(34,(unsigned int)ir34,0x08,0x8b);
-	idt_set_trap_gate(35,(unsigned int)ir35,0x08,0x8b);
-	idt_set_trap_gate(36,(unsigned int)ir36,0x08,0x8b);
-	idt_set_trap_gate(37,(unsigned int)ir37,0x08,0x8b);
-	idt_set_trap_gate(38,(unsigned int)ir38,0x08,0x8b);
-	idt_set_trap_gate(39,(unsigned int)ir39,0x08,0x8b);
-	idt_set_trap_gate(40,(unsigned int)ir40,0x08,0x8b);
-	idt_set_trap_gate(41,(unsigned int)ir41,0x08,0x8b);
-	idt_set_trap_gate(42,(unsigned int)ir42,0x08,0x8b);
-	idt_set_trap_gate(43,(unsigned int)ir43,0x08,0x8b);
-	idt_set_trap_gate(44,(unsigned int)ir44,0x08,0x8b);
-	idt_set_trap_gate(45,(unsigned int)ir45,0x08,0x8b);
-	idt_set_trap_gate(46,(unsigned int)ir46,0x08,0x8b);
-	idt_set_trap_gate(47,(unsigned int)ir47,0x08,0x8b);
+	idt_set_int_gate(32,(unsigned int)ir32,0x08,0x8b);
+	idt_set_int_gate(33,(unsigned int)ir33,0x08,0x8b);
+	idt_set_int_gate(34,(unsigned int)ir34,0x08,0x8b);
+	idt_set_int_gate(35,(unsigned int)ir35,0x08,0x8b);
+	idt_set_int_gate(36,(unsigned int)ir36,0x08,0x8b);
+	idt_set_int_gate(37,(unsigned int)ir37,0x08,0x8b);
+	idt_set_int_gate(38,(unsigned int)ir38,0x08,0x8b);
+	idt_set_int_gate(39,(unsigned int)ir39,0x08,0x8b);
+	idt_set_int_gate(40,(unsigned int)ir40,0x08,0x8b);
+	idt_set_int_gate(41,(unsigned int)ir41,0x08,0x8b);
+	idt_set_int_gate(42,(unsigned int)ir42,0x08,0x8b);
+	idt_set_int_gate(43,(unsigned int)ir43,0x08,0x8b);
+	idt_set_int_gate(44,(unsigned int)ir44,0x08,0x8b);
+	idt_set_int_gate(45,(unsigned int)ir45,0x08,0x8b);
+	idt_set_int_gate(46,(unsigned int)ir46,0x08,0x8b);
+	//设置handler函数
+	func_array[0] = ir32_handler;
+	func_array[1] = ir33_handler;
+	func_array[2] = ir34_handler;
+	func_array[3] = ir35_handler;
+	func_array[4] = ir36_handler;
+	func_array[5] = ir37_handler;
+	func_array[6] = ir38_handler;
+	func_array[7] = ir39_handler;
+	func_array[8] = ir40_handler;
+	func_array[9] = ir41_handler;
+	func_array[10] = ir42_handler;
+	func_array[11] = ir43_handler;
+	func_array[12] = ir44_handler;
+	func_array[13] = ir45_handler;
+	func_array[14] = ir46_handler;
 	idt_flush();
 }
-void is0()
+//中断函数的实现
+unsigned int counter = 0;
+void ir32_handler()
 {
-	printk("Division By Zero Exception\n");
-	for(;;);
+	counter++;
+	if(counter % 100 ==0)
+	{
+		printk("one minitues spend%d\n",counter);
+	}
 }
-void is1()
+void ir33_handler()
 {
-	printk("Debug exception\n");
-	for(;;);
 }
-void is2()
+void ir34_handler()
 {
-	printk("Non maskable interrupt\n");
-	for(;;);
 }
-void is3()
+void ir35_handler()
 {
-	printk("Breakpoint exception\n");
-	for(;;);
 }
-void is4()
+void ir36_handler()
 {
-	printk("Into detected overflow\n");
-	for(;;);
 }
-void is5()
+void ir37_handler()
 {
-	printk("Out of bounds exception\n");
-	for(;;);
 }
-void is6()
+void ir38_handler()
 {
-	printk("Invalid Opcode Exception\n");
-	for(;;);
 }
-void is7()
+void ir39_handler()
 {
-	printk("No coprocessor exception\n");
-	for(;;);
 }
-void is8(unsigned char c)
+void ir40_handler()
 {
-	printk("Double fault,error code:%d",c);
-	for(;;);
 }
-void is9()
+void ir41_handler()
 {
-	printk("Coprocessor segment overrun");
-	for(;;);
 }
-void is10(unsigned char c)
+void ir42_handler()
 {
-	printk("Bad TSS:%d",c);
-	for(;;);
 }
-void is11(unsigned char c)
+void ir43_handler()
 {
-	printk("Segment not present:%d",c);
-	for(;;);
 }
-void is12(unsigned char c)
+void ir44_handler()
 {
-	printk("Stack Fault Exception:%d\n",c);
-	for(;;);
 }
-void is13(unsigned char c)
+void ir45_handler()
 {
-	printk("General protection fault:%d\n",c);
-	for(;;);
 }
-void is14(unsigned char c)
+void ir46_handler()
 {
-	printk("Page fault:%d\n",c);
-	for(;;);
-}
-void is15()
-{
-	printk("Unknown interrupt exception\n");
-	for(;;);
-}
-void is16()
-{
-	printk("Coprocessor fault\n");
-	for(;;);
-}
-void is17()
-{
-	printk("Alignment check exception\n");
-	for(;;);
-}
-void is18()
-{
-	printk("Machine check exception\n");
-	for(;;);
-}
-void is19_31()
-{
-	printk("Reserved\n");
-	for(;;);
-}
-void ir32()
-{
-	printk("The time intterupt!\n");
-	send_EOI(32);
-}
-void ir33()
-{		
-	send_EOI(33);
-}
-void ir34()
-{
-	send_EOI(34);
-}
-void ir35()
-{
-	send_EOI(35);
-}
-void ir36()
-{
-	send_EOI(36);
-}
-void ir37()
-{
-	send_EOI(37);
-}
-void ir38()
-{
-	send_EOI(38);
-}
-void ir39()
-{
-	send_EOI(39);
-}
-void ir40()
-{
-	send_EOI(40);
-}
-void ir41()
-{
-	send_EOI(41);
-}
-void ir42()
-{
-	send_EOI(42);
-}
-void ir43()
-{
-	send_EOI(43);
-}
-void ir44()
-{
-	send_EOI(44);
-}
-void ir45()
-{
-	send_EOI(45);
-}
-void ir46()
-{
-	send_EOI(46);
-}
-void ir47()
-{
-	send_EOI(47);
 }
