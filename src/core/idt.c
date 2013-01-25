@@ -43,47 +43,52 @@ void ir44();
 void ir45();
 void ir46();
 void ir47();
-//重置中断号
-void reset_int(unsigned short i_num)
+//设置定时器的divisor
+void enable_timer(unsigned int hz)
+{
+	int divisor = 1193180 / hz;
+	outportb(0x43,0x36);//counter= 0,RW =3(LSB then MSB),Mode = 3(Square Wave Mode),BCD = 0(note use BCD)
+	outportb(0x40,divisor & 0xff);
+	outportb(0x40,divisor>>8);
+}
+//Send EOI
+void send_EOI(unsigned short i_num)
 {
 	if(i_num >= 40)
 	{
 		outportb(0xA0, 0x20);
 	}
 	outportb(0x20, 0x20);
+	//enable_int();
 }
 //重新设置中断门
 void reset_int_gate()
 {
-	unsigned char pri_icw1,sec_icw1,pri_icw2,sec_icw2,pri_icw3,sec_icw3,pri_icw4,sec_icw4;
 	//设置icw1
-	pri_icw1 = 0x11;
-	sec_icw1 = 0x11;
-	outportb(0x20,pri_icw1);
-	outportb(0xa0,sec_icw1);
+	outportb(0x20,0x11);
+	outportb(0xa0,0x11);
 	//设置icw2
-	pri_icw2 = 0x20;
-	sec_icw2 = 0x28;
-	outportb(0x21,pri_icw2);
-	outportb(0xa1,pri_icw2);
+	outportb(0x21,0x20);
+	outportb(0xa1,0x28);
 	//设置icw3
-	pri_icw3 = 0x4;
-	sec_icw3 = 0x2;
-	outportb(0x21,pri_icw3);
-	outportb(0xa1,sec_icw3);
+	outportb(0x21,0x04);
+	outportb(0xa1,0x02);
 	//设置icw4
-	pri_icw4 = 0x1;
-	sec_icw4 = 0x1;
-	outportb(0x21,pri_icw4);
-	outportb(0xa1,pri_icw4);
+	outportb(0x21,0x01);
+	outportb(0xa1,0x01);
 	//设置ocw1,ocw2
-	outportb(0x21,0);
-	outportb(0xa1,0);
+	outportb(0x21,0x0);
+	outportb(0xa1,0x0);
 }
 //允许中断
 void enable_int()
 {
 	__asm__ __volatile__ ("sti");
+}
+//禁止中断
+void disable_int()
+{
+	__asm__ __volatile__ ("cli");
 }
 //设置中断门的操作
 void idt_set_int_gate(int index,unsigned int offset,unsigned short selected,unsigned char control)
@@ -144,22 +149,22 @@ void idt_init()
 	idt_set_int_gate(30,(unsigned int)is19_31,0x08,0x8b);
 	idt_set_int_gate(31,(unsigned int)is19_31,0x08,0x8b);
 
-	idt_set_int_gate(32,(unsigned int)ir32,0x08,0x8b);
-	idt_set_int_gate(33,(unsigned int)ir33,0x08,0x8b);
-	idt_set_int_gate(34,(unsigned int)ir34,0x08,0x8b);
-	idt_set_int_gate(35,(unsigned int)ir35,0x08,0x8b);
-	idt_set_int_gate(36,(unsigned int)ir36,0x08,0x8b);
-	idt_set_int_gate(37,(unsigned int)ir37,0x08,0x8b);
-	idt_set_int_gate(38,(unsigned int)ir38,0x08,0x8b);
-	idt_set_int_gate(39,(unsigned int)ir39,0x08,0x8b);
-	idt_set_int_gate(40,(unsigned int)ir40,0x08,0x8b);
-	idt_set_int_gate(41,(unsigned int)ir41,0x08,0x8b);
-	idt_set_int_gate(42,(unsigned int)ir42,0x08,0x8b);
-	idt_set_int_gate(43,(unsigned int)ir43,0x08,0x8b);
-	idt_set_int_gate(44,(unsigned int)ir44,0x08,0x8b);
-	idt_set_int_gate(45,(unsigned int)ir45,0x08,0x8b);
-	idt_set_int_gate(46,(unsigned int)ir46,0x08,0x8b);
-	idt_set_int_gate(47,(unsigned int)ir47,0x08,0x8b);
+	idt_set_trap_gate(32,(unsigned int)ir32,0x08,0x8b);
+	idt_set_trap_gate(33,(unsigned int)ir33,0x08,0x8b);
+	idt_set_trap_gate(34,(unsigned int)ir34,0x08,0x8b);
+	idt_set_trap_gate(35,(unsigned int)ir35,0x08,0x8b);
+	idt_set_trap_gate(36,(unsigned int)ir36,0x08,0x8b);
+	idt_set_trap_gate(37,(unsigned int)ir37,0x08,0x8b);
+	idt_set_trap_gate(38,(unsigned int)ir38,0x08,0x8b);
+	idt_set_trap_gate(39,(unsigned int)ir39,0x08,0x8b);
+	idt_set_trap_gate(40,(unsigned int)ir40,0x08,0x8b);
+	idt_set_trap_gate(41,(unsigned int)ir41,0x08,0x8b);
+	idt_set_trap_gate(42,(unsigned int)ir42,0x08,0x8b);
+	idt_set_trap_gate(43,(unsigned int)ir43,0x08,0x8b);
+	idt_set_trap_gate(44,(unsigned int)ir44,0x08,0x8b);
+	idt_set_trap_gate(45,(unsigned int)ir45,0x08,0x8b);
+	idt_set_trap_gate(46,(unsigned int)ir46,0x08,0x8b);
+	idt_set_trap_gate(47,(unsigned int)ir47,0x08,0x8b);
 	idt_flush();
 }
 void is0()
@@ -264,66 +269,66 @@ void is19_31()
 }
 void ir32()
 {
-	printk("zzzzzzzzzzzzzzzzzzzzzz");
-	reset_int(32);
+	printk("The time intterupt!\n");
+	send_EOI(32);
 }
 void ir33()
-{
-	reset_int(33);
+{		
+	send_EOI(33);
 }
 void ir34()
 {
-	reset_int(34);
+	send_EOI(34);
 }
 void ir35()
 {
-	reset_int(35);
+	send_EOI(35);
 }
 void ir36()
 {
-	reset_int(36);
+	send_EOI(36);
 }
 void ir37()
 {
-	reset_int(37);
+	send_EOI(37);
 }
 void ir38()
 {
-	reset_int(38);
+	send_EOI(38);
 }
 void ir39()
 {
-	reset_int(39);
+	send_EOI(39);
 }
 void ir40()
 {
-	reset_int(40);
+	send_EOI(40);
 }
 void ir41()
 {
-	reset_int(41);
+	send_EOI(41);
 }
 void ir42()
 {
-	reset_int(42);
+	send_EOI(42);
 }
 void ir43()
 {
-	reset_int(43);
+	send_EOI(43);
 }
 void ir44()
 {
-	reset_int(44);
+	send_EOI(44);
 }
 void ir45()
 {
-	reset_int(45);
+	send_EOI(45);
 }
 void ir46()
 {
-	reset_int(46);
+	send_EOI(46);
 }
 void ir47()
 {
-	reset_int(47);
+	send_EOI(47);
 }

@@ -24,6 +24,10 @@
 	extern void reset_int_gate();
 	//允许中断
 	extern void enable_int();
+	//禁止中断
+	extern void disable_int();
 	//重置中断
-	extern void reset_int(unsigned short i_num);
+	extern void send_EOI(unsigned short i_num);
+	//enable timer
+	extern void enable_timer(unsigned int hz);
 #endif
