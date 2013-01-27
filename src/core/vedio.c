@@ -91,6 +91,13 @@ void roll_up()
 		memcpy(starPtr,endPtr,WIDTH*2);
 		starPtr = endPtr;
 	}
+	//把最后一行设为空行
+	int index_x;
+	short * tmp_ptr = (short *)endPtr;
+	for(index_x = 0;index_x < WIDTH;index_x++)
+	{
+		*(tmp_ptr+index_x) = (color << 8 | ' ');
+	}
 	_y = HEIGHT - 1;
 	if(_y < 0)
 	{
@@ -136,7 +143,7 @@ _loop:
 	}
 	if(c=='o' || c=='x')
 	{
-		printn(*adx,c='o'?8:16);
+		printn(*adx,c=='o'?8:16);
 	}
 	if(c=='c')
 	{

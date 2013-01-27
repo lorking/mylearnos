@@ -2,6 +2,7 @@
 #include <idt.h>
 #include <vedio.h>
 #include <io.h>
+#include <key.h>
 extern struct idt_entry idt[256];
 extern struct idt_ptr	idtp;
 extern void idt_flush();
@@ -15,7 +16,7 @@ char * error_msg [20] = {"Division By Zero Exception\n","Debug exception\n","Non
 //中断函数指针数组
 void (* func_array[15])();
 //中断函数的处理函数
-void ir32_handler();
+void timer_handler();
 void ir33_handler();
 void ir34_handler();
 void ir35_handler();
@@ -209,7 +210,7 @@ void idt_init()
 	idt_set_int_gate(45,(unsigned int)ir45,0x08,0x8b);
 	idt_set_int_gate(46,(unsigned int)ir46,0x08,0x8b);
 	//设置handler函数
-	func_array[0] = ir32_handler;
+	func_array[0] = timer_handler;
 	func_array[1] = ir33_handler;
 	func_array[2] = ir34_handler;
 	func_array[3] = ir35_handler;
@@ -227,17 +228,22 @@ void idt_init()
 	idt_flush();
 }
 //中断函数的实现
-unsigned int counter = 0;
-void ir32_handler()
+//unsigned int counter = 0;
+void timer_handler()
 {
+	/*
 	counter++;
 	if(counter % 100 ==0)
 	{
 		printk("one minitues spend%d\n",counter);
-	}
+	}*/
 }
 void ir33_handler()
 {
+	unsigned char scancode;
+	//scancode = inportb(0x60);
+	scancode = read_key_encoder();
+	printk("The input code is:[%x]\n",scancode);
 }
 void ir34_handler()
 {

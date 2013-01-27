@@ -6,8 +6,8 @@ tmp/boot.img:boot/boot.asm
 	nasm -f bin boot/boot.asm -o tmp/boot.img
 tmp/kernel.img:tmp/kernel.bin
 	objcopy -R .pdr -R .comment -R .note -S -O binary tmp/kernel.bin tmp/kernel.img
-tmp/kernel.bin:tmp/entry.o tmp/kernel.o tmp/vedio.o tmp/io.o ldfile/linker.ld tmp/system.o tmp/idt.o
-	ld -T ldfile/linker.ld -o tmp/kernel.bin tmp/entry.o tmp/kernel.o tmp/vedio.o tmp/io.o tmp/system.o tmp/idt.o
+tmp/kernel.bin:tmp/entry.o tmp/kernel.o tmp/vedio.o tmp/io.o ldfile/linker.ld tmp/system.o tmp/idt.o tmp/key.o
+	ld -T ldfile/linker.ld -o tmp/kernel.bin tmp/entry.o tmp/kernel.o tmp/vedio.o tmp/io.o tmp/system.o tmp/idt.o tmp/key.o
 tmp/vedio.o:src/core/vedio.c src/header/vedio.h src/header/io.h src/header/system.h
 	gcc -c -o tmp/vedio.o src/core/vedio.c -nostdinc -fno-builtin -fno-stack-protector -I./src/header
 tmp/entry.o:src/core/entry.asm
@@ -18,8 +18,10 @@ tmp/io.o:src/core/io.c src/header/io.h src/header/system.h
 	gcc -c src/core/io.c -o tmp/io.o  -nostdinc -fno-builtin -fno-stack-protector -I./src/header
 tmp/system.o:src/core/system.c src/header/system.h
 	gcc -c src/core/system.c -o tmp/system.o -nostdinc -fno-builtin -fno-stack-protector -I./src/header
-tmp/idt.o:src/core/idt.c src/header/idt.h
+tmp/idt.o:src/core/idt.c src/header/idt.h src/header/key.h
 	gcc -c src/core/idt.c -o tmp/idt.o -nostdinc -fno-builtin -fno-stack-protector -I./src/header
+tmp/key.o:src/core/key.c src/header/key.h
+	gcc -c src/core/key.c -o tmp/key.o -nostdinc -fno-builtin -fno-stack-protector -I./src/header
 clean:
 	rm tmp/*
 	rm floppy.img
