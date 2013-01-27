@@ -12,7 +12,7 @@ tmp/vedio.o:src/core/vedio.c src/header/vedio.h src/header/io.h src/header/syste
 	gcc -c -o tmp/vedio.o src/core/vedio.c -nostdinc -fno-builtin -fno-stack-protector -I./src/header
 tmp/entry.o:src/core/entry.asm
 	nasm -f elf -o tmp/entry.o src/core/entry.asm
-tmp/kernel.o:src/core/kernel.c src/header/system.h src/header/vedio.h src/header/system.h src/header/struct.h src/header/idt.h
+tmp/kernel.o:src/core/kernel.c src/header/system.h src/header/vedio.h src/header/system.h src/header/struct.h src/header/idt.h src/header/key.h
 	gcc -c src/core/kernel.c -o tmp/kernel.o  -nostdinc -fno-builtin -fno-stack-protector -I./src/header
 tmp/io.o:src/core/io.c src/header/io.h src/header/system.h
 	gcc -c src/core/io.c -o tmp/io.o  -nostdinc -fno-builtin -fno-stack-protector -I./src/header

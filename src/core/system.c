@@ -9,12 +9,14 @@ int strlen(char *s)
 	}while(c!=NULL);
 	return i;
 }
-char *memcpy(char *dest,const char *src,int len)
+char *memcpy(void *dest,const void *src,int len)
 {
 	int i;
+	char * dest_ = (char *)dest;
+	char * src_ = (char *)src;
 	for(i=0;i < len;i++)
 	{
-		*(dest + i)  = *(src + i);
+		*(dest_ + i)  = *(src_ + i);
 	}
 	return dest;
 }

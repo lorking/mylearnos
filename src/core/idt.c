@@ -241,9 +241,15 @@ void timer_handler()
 void ir33_handler()
 {
 	unsigned char scancode;
-	//scancode = inportb(0x60);
 	scancode = read_key_encoder();
 	printk("The input code is:[%x]\n",scancode);
+	if(scancode==1)
+	{
+		set_led_lock(1);
+	}else if(scancode==2)
+	{
+		set_led_lock(0);
+	}
 }
 void ir34_handler()
 {

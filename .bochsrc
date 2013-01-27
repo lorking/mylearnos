@@ -6,3 +6,4 @@ floppya: 1_44=floppy.img, status=inserted
 #log:bochs.log
 boot: a
 mouse: enabled=0
+keyboard_type: at

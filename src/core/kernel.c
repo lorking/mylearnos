@@ -2,6 +2,7 @@
 #include <vedio.h>
 #include <struct.h>
 #include <idt.h>
+#include <key.h>
 extern void gdt_flush();//刷新gdt的操作
 //gdt表
 struct gdt_entry gdt[5];
