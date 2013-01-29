@@ -1,9 +1,11 @@
 floppy.img:tmp/floppy.img
 	dd if=tmp/floppy.img of=floppy.img bs=65535 count=1
-tmp/floppy.img:tmp/boot.img tmp/kernel.img
-	cat tmp/boot.img tmp/kernel.img > tmp/floppy.img
+tmp/floppy.img:tmp/boot.img tmp/boot2.img tmp/kernel.img
+	cat tmp/boot.img tmp/boot2.img tmp/kernel.img > tmp/floppy.img
 tmp/boot.img:boot/boot.asm
 	nasm -f bin boot/boot.asm -o tmp/boot.img
+tmp/boot2.img:boot/boot2.asm
+	nasm -f bin boot/boot2.asm -o tmp/boot2.img
 tmp/kernel.img:tmp/kernel.bin
 	objcopy -R .pdr -R .comment -R .note -S -O binary tmp/kernel.bin tmp/kernel.img
 tmp/kernel.bin:tmp/entry.o tmp/kernel.o tmp/vedio.o tmp/io.o ldfile/linker.ld tmp/system.o tmp/idt.o tmp/key.o

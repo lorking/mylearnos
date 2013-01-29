@@ -63,87 +63,14 @@ loader:
 	mov es,ax
 	mov di,0
 	mov si,1
-	mov cx,128
+	mov cx,4
 readSectLoop:
 	call	readSect
 	inc	si	
 	add 	di,0x200
 	dec 	cx
 	jnz 	readSectLoop
-;
-;prepare to enter protect mode
-;
-;Enable the a20
-seta20.1:
-	in 	al,0x64
-	test	al,0x2
-	jnz	seta20.1
-	mov	al,0xd1
-	out	byte 0x64,al
-seta20.2:
-	in	al,0x64
-	test	al,0x2
-	jnz	seta20.2
-	mov	al,0xdf
-	out	byte 0x60,al
-;clear register
-	xor	ax,ax
-	mov	ds,ax
-	mov	ss,ax
-	mov	es,ax
-;clear the intrrupt
-	cli
-	lgdt	[gdt_desc]
-	mov	eax,cr0
-	or	eax,1
-	mov	cr0,eax
-	jmp	08h:_start_pm
-;
-;---------------------------------------
-[bits 32]
-_start_pm:
-	mov	ax,	10h
-	mov	ds,	ax
-	mov	ss,	ax
-	mov	es,	ax
-	mov	gs,	ax
-	;mov	fs,	ax
-	mov	esp,	1000h
-	cld
-	mov	esi,	10000h
-	mov	edi,	100000h
-	mov	ecx,	10000h
-	rep	movsb
-	;jump to C!
-	;never return it shoud be
-	jmp	08h:100000h
-_hang:
-	jmp	_hang
-;null descriptor
-gdt:
-gdt_null:
-	dd	0
-	dd	0
-;code descriptor
-gdt_code:
-	dw	0ffffH
-	dw	0
-	db	0
-	db	10011010b
-	db	11001111b
-	db	0
-;data	descriptor
-gdt_data:
-	dw	0ffffh
-	dw	0
-	db	0
-	db	10010010b
-	db	11001111b
-	db	0
-gdt_end:
-gdt_desc:
-	dw	gdt_end-gdt-1
-	dd	gdt
+	jmp dword 0x1000:0
 
 	times 510 - ($-$$) db 0
 	dw 0xAA55
