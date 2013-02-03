@@ -108,7 +108,7 @@ void roll_up()
 //递归打印数字
 void printn(unsigned int n,unsigned int b)
 {
-	static char *ntab = "01234567890ABCDEF";
+	static char *ntab = "0123456789ABCDEF";
 	unsigned int a,m;
 	if((a=n/b))
 	{

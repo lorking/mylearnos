@@ -38,6 +38,7 @@ obtainMemLoop:
 	jne	obtainMemLoop
 	jmp obtainMemOver
 obtainMemFail:;调用失败,halt
+	hlt
 	ret
 obtainMemOver:
 	pop	bp
@@ -80,8 +81,9 @@ readSect:
 ;********************************************;
 ;mem chek buf
 ;********************************************;
-memcheckNum	dd	0;内存检查的个数
-memcheckbuf:times 512 db 0
+memcheckNum:	dd	0;内存检查的个数
+memcheckbuf:
+	times 512 db 0
 loader2:
 	;读取内存的参数
 	call	obtainMemory
@@ -151,6 +153,13 @@ _start_pm:
 	mov	edi,	100000h
 	mov	ecx,	10000h
 	rep	movsb
+	;向c里边传送内存链表的参数
+	;传送内存指针
+	mov	eax,memcheckbuf;
+	push	eax
+	;传送参数的个数
+	mov	eax,memcheckNum;
+	push	eax
 	;jump to C!
 	;never return it shoud be
 	jmp	08h:100000h

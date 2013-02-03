@@ -41,8 +41,16 @@ global	ir46
 extern gp
 extern idtp
 extern interrupt_handler;中断处理函数
+extern	meminfo_size
+extern	meminfo_dress
 [extern kmain]
 loader:
+	;获得meminfo size
+	pop	eax
+	mov	[meminfo_size],eax
+	;获得meminfo_dress
+	pop	eax
+	mov	[meminfo_dress],eax
 	jmp kmain
 gdt_flush:;刷新gdt的操作
 	lgdt [gp]

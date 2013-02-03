@@ -10,6 +10,9 @@ struct gdt_ptr gp;
 //ldt表
 struct idt_entry idt[256];
 struct idt_ptr	idtp;
+//memory link address
+unsigned int meminfo_dress;
+unsigned int meminfo_size;
 //设置gdt表的操作
 void gdt_set_table(int index,unsigned int base,unsigned int limit,unsigned char access,unsigned char gran)
 {
@@ -42,6 +45,8 @@ void kmain()
 	idt_init();//创建中断向量表
 	enable_timer(100);//允许定时器中断
 	enable_int();//允许中断
+	//printk("aaaaaaaaa:%x,%x",meminfo_size,meminfo_dress);
+	printk("bbbbbbbbbbbbbbb:%x,%x",65648,65658);
 	//__asm__ __volatile__("int $0x1");
 	//int a = 1 /0;
 	for(;;)
