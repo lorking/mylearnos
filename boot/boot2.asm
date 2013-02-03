@@ -2,6 +2,53 @@
 org  0x10000
 jmp	loader2
 ;************************************************;
+;obtain memory size
+;************************************************;
+obtainMemory:
+	push	eax
+	push	es
+	push	di
+	push	ebx
+	push	edx
+	push	ecx
+	push	bp
+	;jmp	obtainMemOver
+	;pop the register
+	;设置缓冲区的地址
+	mov	ax,0x1000
+	mov	es,ax
+	mov	di,memcheckbuf
+	;清空ebx
+	xor	ebx,ebx
+	;设置edx
+	mov	edx,0x534d4150
+obtainMemLoop:
+	mov	eax,0xe820
+	mov	ecx,20
+	;调用中断
+	int	0x15
+	;cf被置位说调用失败
+	jc	obtainMemFail
+	;增加下一个位置,20
+	add	di,20
+	;增加调用的次数
+	inc	dword	[memcheckNum]
+	;检查是否调用完成
+	cmp	ebx,0
+	jne	obtainMemLoop
+	jmp obtainMemOver
+obtainMemFail:;调用失败,halt
+	ret
+obtainMemOver:
+	pop	bp
+	pop	ecx
+	pop	edx
+	pop	ebx
+	pop	di
+	pop	es
+	pop	eax
+	ret
+;************************************************;
 ;read from disk
 ;************************************************;
 readSect:
@@ -30,7 +77,15 @@ readSect:
 	pop     bx
 	pop     cx
 	ret
+;********************************************;
+;mem chek buf
+;********************************************;
+memcheckNum	dd	0;内存检查的个数
+memcheckbuf:times 512 db 0
 loader2:
+	;读取内存的参数
+	call	obtainMemory
+	;执行逻辑
 .Reset:
 	mov ah,0	;reset floppy disk
 	mov dl,0	;driver 0 is floppy disk
