@@ -8,13 +8,15 @@ tmp/boot2.img:boot/boot2.asm
 	nasm -f bin boot/boot2.asm -o tmp/boot2.img
 tmp/kernel.img:tmp/kernel.bin
 	objcopy -R .pdr -R .comment -R .note -S -O binary tmp/kernel.bin tmp/kernel.img
-tmp/kernel.bin:tmp/entry.o tmp/kernel.o tmp/vedio.o tmp/io.o ldfile/linker.ld tmp/system.o tmp/idt.o tmp/key.o
-	ld -T ldfile/linker.ld -o tmp/kernel.bin tmp/entry.o tmp/kernel.o tmp/vedio.o tmp/io.o tmp/system.o tmp/idt.o tmp/key.o
+tmp/kernel.bin:tmp/entry.o tmp/kernel.o tmp/vedio.o tmp/io.o ldfile/linker.ld tmp/system.o tmp/idt.o tmp/key.o tmp/mem.o
+	ld -T ldfile/linker.ld -o tmp/kernel.bin tmp/entry.o tmp/kernel.o tmp/vedio.o tmp/io.o tmp/system.o tmp/idt.o tmp/key.o tmp/mem.o
+tmp/mem.o:src/core/mem.c src/header/mem.h
+	gcc -c -o tmp/mem.o src/core/mem.c -nostdinc -fno-builtin -fno-stack-protector -I./src/header
 tmp/vedio.o:src/core/vedio.c src/header/vedio.h src/header/io.h src/header/system.h
 	gcc -c -o tmp/vedio.o src/core/vedio.c -nostdinc -fno-builtin -fno-stack-protector -I./src/header
 tmp/entry.o:src/core/entry.asm
 	nasm -f elf -o tmp/entry.o src/core/entry.asm
-tmp/kernel.o:src/core/kernel.c src/header/system.h src/header/vedio.h src/header/system.h src/header/struct.h src/header/idt.h src/header/key.h
+tmp/kernel.o:src/core/kernel.c src/header/system.h src/header/vedio.h src/header/system.h src/header/struct.h src/header/idt.h src/header/key.h src/header/mem.h
 	gcc -c src/core/kernel.c -o tmp/kernel.o  -nostdinc -fno-builtin -fno-stack-protector -I./src/header
 tmp/io.o:src/core/io.c src/header/io.h src/header/system.h
 	gcc -c src/core/io.c -o tmp/io.o  -nostdinc -fno-builtin -fno-stack-protector -I./src/header

@@ -12,11 +12,10 @@ obtainMemory:
 	push	edx
 	push	ecx
 	push	bp
-	;jmp	obtainMemOver
-	;pop the register
 	;设置缓冲区的地址
 	mov	ax,0x1000
 	mov	es,ax
+	mov	ds,ax
 	mov	di,memcheckbuf
 	;清空ebx
 	xor	ebx,ebx
@@ -155,10 +154,10 @@ _start_pm:
 	rep	movsb
 	;向c里边传送内存链表的参数
 	;传送内存指针
-	mov	eax,memcheckbuf;
+	mov	eax,memcheckbuf
 	push	eax
 	;传送参数的个数
-	mov	eax,memcheckNum;
+	mov	eax,[memcheckNum]
 	push	eax
 	;jump to C!
 	;never return it shoud be
