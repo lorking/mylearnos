@@ -45,9 +45,10 @@ void kmain()
 	idt_init();//创建中断向量表
 	enable_timer(100);//允许定时器中断
 	enable_int();//允许中断
-	//printk("aaaaaaaaa:%x,%x",meminfo_size,meminfo_dress);
 	set_mem_bios_info(meminfo_size,(struct mem_bios_info *) meminfo_dress);
-	obtain_total_memsize();
+	init_page_manage();
+	int i = 0;
+	int * a = 0x20000;
 	//__asm__ __volatile__("int $0x1");
 	//int a = 1 /0;
 	for(;;)

@@ -2,6 +2,7 @@
 global loader
 global gdt_flush
 global idt_flush
+global page_flush
 global is0
 global is1
 global is2
@@ -43,6 +44,7 @@ extern idtp
 extern interrupt_handler;中断处理函数
 extern	meminfo_size
 extern	meminfo_dress
+extern	page_mem_dic
 [extern kmain]
 loader:
 	;获得meminfo size
@@ -65,6 +67,15 @@ flush2:
 	ret;跳回c函数	
 idt_flush:;刷新idt的操作
 	lidt [idtp]
+	ret
+page_flush:;刷新page的操作
+	push	eax
+	mov	eax,[page_mem_dic]
+	mov	cr3,eax
+	mov	eax,cr0
+	or	eax,80000000h
+	mov	cr0,eax
+	pop	eax
 	ret
 ir32:
 	push	byte 0
