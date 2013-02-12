@@ -49,5 +49,10 @@
 	extern void clear_page_dirty(unsigned int * address,int index);
 	//初始化分页内存的管理
 	extern void init_page_manage();
+	//刷新分页 dic的操作
 	extern void page_flush();
+	//分配物理页的操作
+	extern unsigned int pgalloc();
+	//释放物理页的操作
+	extern void pgfree(unsigned int address);
 #endif

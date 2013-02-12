@@ -1,7 +1,10 @@
 #include <mem.h>
 #include <system.h>
 #include <vedio.h>
-#define KERNERL_PAGE_DIC_ADDRESS	0x20000//定义内核内存表起始的物理地址,2m开始
+#define KERNERL_PAGE_DIC_ADDRESS	0x20000//定义内核内存表dic起始的物理地址,2m开始
+#define KERNERL_MEMSIZE                 0x200000//定义内核的内存大小,2m大小
+unsigned int current_address;//当先分配地址的位置
+void * mem_malloc(unsigned int size);//用来动态管理地址的类
 struct mem_bios_info *mem_bios_ptr;
 unsigned int mem_bios_size;
 unsigned int *page_mem_dic;//页面目录的指针
@@ -185,13 +188,15 @@ void clear_page_dirty(unsigned int * address,int index)
 //初始化分页内存的管理
 void init_page_manage()
 {
+	current_address = KERNERL_PAGE_DIC_ADDRESS;
 	//初始化页目录
-	page_mem_dic = init_page_dic_array(KERNERL_PAGE_DIC_ADDRESS);
+	page_mem_dic = (unsigned int)mem_malloc(4*1024);
+	init_page_dic_array(KERNERL_PAGE_DIC_ADDRESS);
 	//计算需要的页表数
 	unsigned int totalMemSize = obtain_total_memsize();
-	unsigned int pageSize = totalMemSize / (4*1024);
+	unsigned int pageSize = KERNERL_MEMSIZE / (4*1024);
 	//循环设置页目录
-	unsigned int page_start_address = KERNERL_PAGE_DIC_ADDRESS + 1024*4;
+	unsigned int page_start_address = mem_malloc(4*1024*1024);
 	unsigned int i,j,pageSize_counter =0;
 	unsigned int actual_phy_address = 0;
 	char flag = 0;
@@ -221,4 +226,18 @@ void init_page_manage()
 	}
 	//启用分页
 	page_flush();
+}
+void * mem_malloc(unsigned int size)
+{
+	void * tmp = current_address;
+	current_address += size;
+	return tmp;
+}
+//分配物理页的操作
+unsigned int pgalloc()
+{
+}
+//释放物理页的操作
+void pgfree(unsigned int address)
+{
 }
