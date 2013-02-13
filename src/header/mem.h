@@ -52,7 +52,7 @@
 	//刷新分页 dic的操作
 	extern void page_flush();
 	//分配物理页的操作
-	extern unsigned int pgalloc();
+	extern unsigned int* pgalloc();
 	//释放物理页的操作
-	extern void pgfree(unsigned int address);
+	extern void pgfree(unsigned int* address);
 #endif

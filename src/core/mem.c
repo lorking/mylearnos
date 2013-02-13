@@ -4,6 +4,7 @@
 #define KERNERL_PAGE_DIC_ADDRESS	0x20000//定义内核内存表dic起始的物理地址,2m开始
 #define KERNERL_DUMP_MEMBEGIN		0x90000//定义堆内存的起始地址
 #define KERNERL_MEMSIZE                 0x400000//定义内核的内存大小,0~64m大小
+#define USER_MEMBEGIN                   0x404000//用户进程的起始地址,0x400000用来映射pagedic
 unsigned int current_address;//当先分配地址的位置
 void * mem_malloc(unsigned int size);//用来动态管理地址的类
 unsigned int page_table_size;//页表的大小
@@ -13,11 +14,6 @@ unsigned int *page_mem_dic;//页面目录的指针
 char *bit_map_ptr;//用来分配frame的bitmap的指针,内存的大小
 unsigned int bit_map_size;//分配指针的大小
 unsigned int frame_count;//frame的数量
-//清空所有bitmap
-void init_bit_map()
-{
-	memset(bit_map_ptr,0,bit_map_size);
-}
 //设置bit位
 void set_bit_map(unsigned int index)
 {
@@ -58,19 +54,64 @@ unsigned int get_bit_map_first0()
 		int j;
 		for(j=0;j < 8;j++)
 		{
-			tmp <<=j;
 			if( (tmp & (*tmpPtr))==0 )//此位为0
 			{
 				unsigned int ret = i*8 + j;
 				if(ret > frame_count)
 				{
 					return -1;
+				}else
+				{
+					return ret;
 				}
 			}
+			tmp =tmp<<1;
 		}
 		tmpPtr ++;
 	}
 	return -1;
+}
+//清空所有bitmap,并把core所占的物理frame设置为非可应用的
+void init_bit_map()
+{
+	memset(bit_map_ptr,0,bit_map_size);
+	unsigned int coreSize = KERNERL_DUMP_MEMBEGIN/(4*1024);
+	int i;
+	for(i=0;i < coreSize;i++)
+	{
+		set_bit_map(i);
+	}
+	/*
+	i = get_bit_map_first0();
+	printk("wwwwwwwww:%d\n",i);
+	unsigned int * p = pgalloc();
+	i = get_bit_map_first0();
+	printk("wwwwwwwww:%d\n",i);
+	pgalloc();
+	i = get_bit_map_first0();
+	printk("wwwwwwwww:%d\n",i);
+	pgfree(p);
+	i = get_bit_map_first0();
+	printk("wwwwwwwww:%d\n",i);
+	*/
+}
+//分配物理页的操作
+unsigned int * pgalloc()
+{
+	unsigned int tmp = get_bit_map_first0();
+	if(tmp == -1)
+	{
+		return -1;
+	}
+	set_bit_map(tmp);//置位物理页的操作
+	return tmp*4*1024;
+}
+//释放物理页的操作
+void pgfree(unsigned int *address)
+{
+	unsigned int tmp = (unsigned int)address;
+	tmp = tmp / (4 * 1024);
+	clear_bit_map(tmp);
 }
 //设置内存信息
 void set_mem_bios_info(int size,struct mem_bios_info *p)
@@ -97,7 +138,6 @@ unsigned int obtain_total_memsize()
 			}
 		}
 	}
-	//printk("total ram:%d\n",total/1024/1024);
 	return total;
 }
 //初始化页面录的操作，具体操作为把物理地址按照4k对齐后，把后边连续1024可int填充为0
@@ -266,8 +306,10 @@ void init_page_manage()
 	}
 	//分配指向bitmap的指针
 	bit_map_ptr = mem_malloc(bit_map_size);
-	unsigned int pageSize = KERNERL_DUMP_MEMBEGIN / (4*1024);
+	init_bit_map();//初始化bitmap
+	unsigned int pageSize = KERNERL_DUMP_MEMBEGIN/ (4*1024);
 	//循环设置页目录
+	/*
 	unsigned int page_start_address = mem_malloc(4*1024*1024);
 	unsigned int i,j,pageSize_counter =0;
 	unsigned int actual_phy_address = 0;
@@ -298,18 +340,12 @@ void init_page_manage()
 	}
 	//启用分页
 	page_flush();
+	*/
 }
 void * mem_malloc(unsigned int size)
 {
-	void * tmp = current_address;
+	void * tmp = (void *)current_address;
 	current_address += size;
 	return tmp;
 }
-//分配物理页的操作
-unsigned int pgalloc()
-{
-}
-//释放物理页的操作
-void pgfree(unsigned int address)
-{
-}
+
