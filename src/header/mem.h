@@ -5,6 +5,10 @@
 	#define	MEM_TYPE_3	3//ACPI reclaimable memory
 	#define	MEM_TYPE_4	4//ACPI NVS memory
 	#define	MEM_TYPE_5	5//Area containing bad memory
+	#define KERNERL_PAGE_DIC_ADDRESS	0x20000//定义内核内存表dic起始的物理地址,2m开始
+	#define KERNERL_DUMP_MEMBEGIN		0x90000//定义堆内存的起始地址
+	#define KERNERL_MEMSIZE                 0x400000//定义内核的内存大小,0~64m大小
+	#define USER_MEMBEGIN                   0x404000//用户进程的起始地址,0x400000用来映射pagedic
 	struct mem_bios_info
 	{
 		unsigned int baseAddr_low;//基础地址low
@@ -55,4 +59,6 @@
 	extern unsigned int* pgalloc();
 	//释放物理页的操作
 	extern void pgfree(unsigned int* address);
+	//用来动态管理地址的类
+	extern void * mem_malloc(unsigned int size);
 #endif

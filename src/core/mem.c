@@ -1,29 +1,26 @@
 #include <mem.h>
 #include <system.h>
 #include <vedio.h>
-#define KERNERL_PAGE_DIC_ADDRESS	0x20000//定义内核内存表dic起始的物理地址,2m开始
-#define KERNERL_DUMP_MEMBEGIN		0x90000//定义堆内存的起始地址
-#define KERNERL_MEMSIZE                 0x400000//定义内核的内存大小,0~64m大小
-#define USER_MEMBEGIN                   0x404000//用户进程的起始地址,0x400000用来映射pagedic
 unsigned int current_address;//当先分配地址的位置
-void * mem_malloc(unsigned int size);//用来动态管理地址的类
-unsigned int page_table_size;//页表的大小
 struct mem_bios_info *mem_bios_ptr;
 unsigned int mem_bios_size;
 unsigned int *page_mem_dic;//页面目录的指针
-char *bit_map_ptr;//用来分配frame的bitmap的指针,内存的大小
-unsigned int bit_map_size;//分配指针的大小
-unsigned int frame_count;//frame的数量
+//保存页表的一些信息
+struct bit_map_info_struct{
+	char *bit_map_ptr;//用来分配frame的bitmap的指针,内存的大小
+	unsigned int bit_map_size;//分配指针的大小
+	unsigned int frame_count;//frame的数量
+} bit_mapinfo;
 //设置bit位
 void set_bit_map(unsigned int index)
 {
-	if(index >= frame_count)
+	if(index >= bit_mapinfo.frame_count)
 	{
 		return;
 	}
 	unsigned int a_index = index / 8;
 	unsigned int bit_index = index % 8;
-	char * tmpPtr = bit_map_ptr + a_index;
+	char * tmpPtr = bit_mapinfo.bit_map_ptr + a_index;
 	unsigned char tmpChar = 0x1;
 	tmpChar <<=bit_index;
 	(*tmpPtr) = (*tmpPtr) | tmpChar;
@@ -31,13 +28,13 @@ void set_bit_map(unsigned int index)
 //清空bit位
 void clear_bit_map(unsigned int index)
 {
-	if(index >= frame_count)
+	if(index >= bit_mapinfo.frame_count)
 	{
 		return;
 	}
 	unsigned int a_index = index / 8;
 	unsigned int bit_index = index % 8;
-	char * tmpPtr = bit_map_ptr + a_index;
+	char * tmpPtr = bit_mapinfo.bit_map_ptr + a_index;
 	unsigned char tmpChar = 0x1;
 	tmpChar <<=bit_index;
 	tmpChar = ~tmpChar;
@@ -47,8 +44,8 @@ void clear_bit_map(unsigned int index)
 unsigned int get_bit_map_first0()
 {
 	int i;
-	char * tmpPtr = bit_map_ptr;
-	for(i=0;i < bit_map_size;i++)
+	char * tmpPtr = bit_mapinfo.bit_map_ptr;
+	for(i=0;i < bit_mapinfo.bit_map_size;i++)
 	{
 		unsigned char tmp = 0x1;
 		int j;
@@ -57,7 +54,7 @@ unsigned int get_bit_map_first0()
 			if( (tmp & (*tmpPtr))==0 )//此位为0
 			{
 				unsigned int ret = i*8 + j;
-				if(ret > frame_count)
+				if(ret > bit_mapinfo.frame_count)
 				{
 					return -1;
 				}else
@@ -74,7 +71,7 @@ unsigned int get_bit_map_first0()
 //清空所有bitmap,并把core所占的物理frame设置为非可应用的
 void init_bit_map()
 {
-	memset(bit_map_ptr,0,bit_map_size);
+	memset(bit_mapinfo.bit_map_ptr,0,bit_mapinfo.bit_map_size);
 	unsigned int coreSize = KERNERL_DUMP_MEMBEGIN/(4*1024);
 	int i;
 	for(i=0;i < coreSize;i++)
@@ -105,6 +102,12 @@ unsigned int * pgalloc()
 	}
 	set_bit_map(tmp);//置位物理页的操作
 	return tmp*4*1024;
+}
+//获得pagedic某一项的指针
+unsigned int * get_dic_ptr(unsigned int *ptr,unsigned int address)
+{
+	address = address / (1024 * 4) / (1024 * 4);
+	return (ptr + address);
 }
 //释放物理页的操作
 void pgfree(unsigned int *address)
@@ -298,14 +301,16 @@ void init_page_manage()
 	init_page_dic_array(KERNERL_PAGE_DIC_ADDRESS);
 	//计算实际物理内存的frame数
 	unsigned int totalMemSize = obtain_total_memsize();
-	frame_count = totalMemSize / (4 * 1024);
-	bit_map_size = frame_count / 8;
-	if(frame_count % 8 ==0)
+	bit_mapinfo.frame_count = totalMemSize / (4 * 1024);
+	bit_mapinfo.bit_map_size = bit_mapinfo.frame_count / 8;
+	if(bit_mapinfo.frame_count % 8 ==0)
 	{
-		bit_map_size ++;
+		bit_mapinfo.bit_map_size ++;
 	}
+	printk("bit map size:%d\n",bit_mapinfo.bit_map_size);
 	//分配指向bitmap的指针
-	bit_map_ptr = mem_malloc(bit_map_size);
+	bit_mapinfo.bit_map_ptr = mem_malloc(bit_mapinfo.bit_map_size);
+	//mem_malloc(4*1024*1024);
 	init_bit_map();//初始化bitmap
 	unsigned int pageSize = KERNERL_DUMP_MEMBEGIN/ (4*1024);
 	//循环设置页目录
