@@ -15,6 +15,29 @@ struct coredump_struct_header{
 	unsigned int mem_begin_addr;//内存起始的位置
 	unsigned int lenth;
 }  header;
+//组合相邻的节点
+void combination(struct coredump_struct *p)
+{
+	struct coredump_struct *tmpPtr = NULL;
+	if(p->flag == 0)
+		return;
+	if(p->free == 0)//正在被使用
+		return;
+	int n = p->nxt;
+	if(n==-1)
+		return;
+	if(tmpPtr->free==0)
+		return;
+	//把两项合并成一项
+	p->nxt = tmpPtr -> nxt;
+	p->size = p->size + tmpPtr->nxt;
+	if(header.tail = tmpPtr)//设置尾部
+		header.tail = p;
+	//把二节点设为不可用
+	tmpPtr -> flag = 0;
+	//递归调用本节点
+	combination(p);
+}
 //初始化内存区域
 void  coredump_init(unsigned int size,unsigned int mem_begin_addr)
 {
@@ -32,11 +55,12 @@ int findFirstSuitIndex(unsigned int size)
 	{
 		return -1;
 	}
-	//循环查找比需要分配的内存大的节点
+	//循环查找比需要分配的内存大的节点,并且合并相邻都是没有used的节点
 	struct coredump_struct * ptr = header.head;
 	int nxt = 0;
 	do{
 		ptr = ptr + nxt;
+		combination(ptr);//合并相邻的节点
 		if(ptr -> free ==1)
 		{
 			if(ptr -> size >= size)
@@ -107,6 +131,7 @@ void * coredump_malloc(unsigned short size)
 		unsigned int highAddress = ptr -> address;
 		if(ptr->size == size)//内存恰好相等,直接返回
 		{
+			ptr -> free = 0;
 			return (void *)highAddress;
 		}
 		//节点不相等，进行分裂的操作
