@@ -3,8 +3,6 @@
 #include <vedio.h>
 #include <mem_coredump_allock.h>
 unsigned int current_address;//当先分配地址的位置
-struct mem_bios_info *mem_bios_ptr;
-unsigned int mem_bios_size;
 unsigned int *page_mem_dic;//页面目录的指针
 //保存页表的一些信息
 struct bit_map_info_struct{
@@ -12,6 +10,8 @@ struct bit_map_info_struct{
 	unsigned int bit_map_size;//分配指针的大小
 	unsigned int frame_count;//frame的数量
 } bit_mapinfo;
+//保存bios的一些信息
+struct mem_bios_info_struct bios_info;
 //设置bit位
 void set_bit_map(unsigned int index)
 {
@@ -120,20 +120,18 @@ void pgfree(unsigned int *address)
 //设置内存信息
 void set_mem_bios_info(int size,struct mem_bios_info *p)
 {
-	mem_bios_ptr = p;
-	mem_bios_size = size;
+	bios_info.mem_bios_ptr = p;
+	bios_info.mem_bios_size = size;
 }
 //获得内存的总量
 unsigned int obtain_total_memsize()
 {
-	struct mem_bios_info * p = mem_bios_ptr;
+	struct mem_bios_info * p = bios_info.mem_bios_ptr;
 	unsigned int total = 0;	
 	int i = 0;
-	for(i=0;i < mem_bios_size;i++)
+	for(i=0;i < bios_info.mem_bios_size;i++)
 	{
-		//printk("mem1:%x\n",(p+i)->baseAddr_low);
-		//printk("size1:%x\n",(p+i)->regionLen_low);
-		//printk("type:%d\n",(p+i)->type);
+		printk("%x~%x,type:%d\n",(p+i)->baseAddr_low,((p+i)->baseAddr_low+(p+i)->regionLen_low),(p+i)->type);
 		if((p+i)->type==MEM_TYPE_1)
 		{
 			if((p+i)->baseAddr_low + (p+i)->regionLen_low > total)
@@ -314,6 +312,7 @@ void init_page_manage()
 	init_bit_map();//初始化bitmap
 	unsigned int pageSize = KERNERL_DUMP_MEMBEGIN/ (4*1024);
 	coredump_init(4*1024,0,1024);
+	/*
 	void * ptr = coredump_malloc(10);
 	void *ptr1 = coredump_malloc(12);
 	void *ptr2 = coredump_malloc(5);
@@ -322,6 +321,7 @@ void init_page_manage()
 	coredump_free(ptr);
 	coredump_free(ptr1);
 	ptr = coredump_malloc(23);
+	*/
 	//循环设置页目录
 	/*
 	unsigned int page_start_address = mem_malloc(4*1024*1024);
@@ -362,4 +362,14 @@ void * mem_malloc(unsigned int size)
 	current_address += size;
 	return tmp;
 }
-
+//给定地址是否在保留的地址内
+int isAddressReserve(unsigned int address,struct mem_bios_info_struct *ptr)
+{
+	struct mem_bios_info *p = ptr->mem_bios_ptr;
+	unsigned int size = ptr -> mem_bios_size;
+	for(int i=0;i < size;i++)
+	{
+		//if(address > p->)
+	}
+	return -1;
+}

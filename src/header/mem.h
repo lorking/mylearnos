@@ -17,6 +17,12 @@
 		unsigned int regionLen_high;//长度的高地址
 		unsigned int type;//类型
 	};
+	//用来保存mem_bios_info的结构
+	struct mem_bios_info_struct
+	{
+		struct mem_bios_info *mem_bios_ptr;
+		unsigned int mem_bios_size;
+	};
 	extern struct mem_bios_info *mem_bios_ptr;
 	extern unsigned int mem_bios_size;
 	//extern int total_size;//总内存的总数
@@ -61,4 +67,6 @@
 	extern void pgfree(unsigned int* address);
 	//用来动态管理地址的类
 	extern void * mem_malloc(unsigned int size);
+	//给定地址是否在reserve范围内
+	extern int isAddressReserve(unsigned int address,struct mem_bios_info_struct *ptr);
 #endif
