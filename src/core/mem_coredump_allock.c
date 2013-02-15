@@ -1,6 +1,7 @@
 #include <mem.h>
 #include <system.h>
 #include <mem_coredump_allock.h>
+#include <vedio.h>
 struct coredump_struct{
 	unsigned char	flag;//标志位,用来表明是否被使用
 	unsigned char	free;//标志位，用来表明这块内存是否被使用
@@ -13,8 +14,47 @@ struct coredump_struct_header{
 	struct coredump_struct *head;//表头
 	struct coredump_struct *tail;//表尾
 	unsigned int mem_begin_addr;//内存起始的位置
+	unsigned int mem_end_addr;//内存终止的位置
 	unsigned int lenth;
 }  header;
+//打印header消息
+void  coredump_printheader()
+{
+	printk("--------------header info begin------------------------\n");
+	printk("the head:%d,tail:%d,begin_addr:%d,end_addr:%d,lenth:%d\n",header.head, \
+		(header.tail-header.head),header.mem_begin_addr,header.mem_end_addr,header.lenth);
+	printk("--------------header info end--------------------------\n");
+}
+//打印nodes消息
+void  coredump_printnodes()
+{
+	printk("--------------nodes info begin--------------------------\n");
+	struct coredump_struct *p = header.head;
+	for(int i=0;i < header.lenth;i++)
+	{
+		printk("the nodes [%d] info:flag=%d,free=%d,nxt=%d,size=%d,address=%d\n",i,p->flag,p->free,p->nxt,p->size,p->address);
+		p++;
+	}
+	printk("--------------nodes info end----------------------------\n");
+}
+//查找相应地址的节点
+struct coredump_struct * findAddrNode(void * addr)
+{
+	unsigned int n_addr = (unsigned int) addr;
+	if(header.lenth==0)
+		return NULL;
+	struct coredump_struct * ptr = header.head;
+	int n = 0;
+	do{
+		ptr = header.head + n;
+		if(ptr -> address == n_addr)
+		{
+			return ptr;
+		}
+		n++;
+	}while(ptr->nxt !=-1);
+	return NULL;
+}
 //组合相邻的节点
 void combination(struct coredump_struct *p)
 {
@@ -26,12 +66,13 @@ void combination(struct coredump_struct *p)
 	int n = p->nxt;
 	if(n==-1)
 		return;
+	tmpPtr = header.head + n;
 	if(tmpPtr->free==0)
 		return;
 	//把两项合并成一项
 	p->nxt = tmpPtr -> nxt;
-	p->size = p->size + tmpPtr->nxt;
-	if(header.tail = tmpPtr)//设置尾部
+	p->size = p->size + tmpPtr->size;
+	if(header.tail == tmpPtr)//设置尾部
 		header.tail = p;
 	//把二节点设为不可用
 	tmpPtr -> flag = 0;
@@ -39,11 +80,12 @@ void combination(struct coredump_struct *p)
 	combination(p);
 }
 //初始化内存区域
-void  coredump_init(unsigned int size,unsigned int mem_begin_addr)
+void  coredump_init(unsigned int size,unsigned int mem_begin_addr,unsigned int mem_end_addr)
 {
 	header.head = (struct coredump_struct *)mem_malloc(size);
 	header.lenth = 0;
 	header.mem_begin_addr = mem_begin_addr;
+	header.mem_end_addr = mem_end_addr;
 	header.tail = NULL;
 	memset(header.head,0,size);
 }
@@ -51,7 +93,7 @@ void  coredump_init(unsigned int size,unsigned int mem_begin_addr)
 int findFirstSuitIndex(unsigned int size)
 {
 	//当长度为0时直接返回不存在
-	if(header.lenth = 0)
+	if(header.lenth == 0)
 	{
 		return -1;
 	}
@@ -59,7 +101,7 @@ int findFirstSuitIndex(unsigned int size)
 	struct coredump_struct * ptr = header.head;
 	int nxt = 0;
 	do{
-		ptr = ptr + nxt;
+		ptr = header.head + nxt;
 		combination(ptr);//合并相邻的节点
 		if(ptr -> free ==1)
 		{
@@ -96,7 +138,7 @@ unsigned int findFirstUnUsedIndex()
 	struct coredump_struct * ptr = header.head;
 	for(int i = 0;i < header.lenth;i++)
 	{
-		if(ptr->flag==1)
+		if(ptr->flag==0)
 		{
 			return i;
 		}
@@ -116,6 +158,11 @@ void * coredump_malloc(unsigned short size)
 	{
 		//查找最高位置的内存
 		unsigned int highAddress = findTheHighAddress();
+		//判断要分配的内存是否已经超过地址上线,如果是的话分配失败
+		if(highAddress + size > header.mem_end_addr)
+		{
+			return NULL;
+		}
 		//找到一个空白的节点,赋上相应的值
 		int in = findFirstUnUsedIndex();
 		ptr = ptr + in;
@@ -123,7 +170,16 @@ void * coredump_malloc(unsigned short size)
 		ptr -> free = 0;
 		ptr -> nxt = -1;
 		ptr -> size = size;
-		header.tail = ptr;
+		ptr -> address = highAddress;
+		//设置tail及tail的下个节点
+		if(header.tail == NULL)
+		{
+			header.tail = ptr;
+		}else
+		{
+			header.tail->nxt = in;
+			header.tail = ptr;
+		}
 		return (void *)highAddress;
 	}else//节点存在复用新的节点
 	{
@@ -153,5 +209,13 @@ void * coredump_malloc(unsigned short size)
 		}
 		return (void *)highAddress;
 	}
+}
+//释放堆中的内存
+void  coredump_free(void * ptr)
+{
+	struct coredump_struct * p = findAddrNode(ptr);
+	if(p==NULL)
+		return;
+	p-> free = 1;
 }
 

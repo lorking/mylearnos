@@ -1,6 +1,7 @@
 #include <mem.h>
 #include <system.h>
 #include <vedio.h>
+#include <mem_coredump_allock.h>
 unsigned int current_address;//当先分配地址的位置
 struct mem_bios_info *mem_bios_ptr;
 unsigned int mem_bios_size;
@@ -307,12 +308,20 @@ void init_page_manage()
 	{
 		bit_mapinfo.bit_map_size ++;
 	}
-	printk("bit map size:%d\n",bit_mapinfo.bit_map_size);
 	//分配指向bitmap的指针
 	bit_mapinfo.bit_map_ptr = mem_malloc(bit_mapinfo.bit_map_size);
 	//mem_malloc(4*1024*1024);
 	init_bit_map();//初始化bitmap
 	unsigned int pageSize = KERNERL_DUMP_MEMBEGIN/ (4*1024);
+	coredump_init(4*1024,0,1024);
+	void * ptr = coredump_malloc(10);
+	void *ptr1 = coredump_malloc(12);
+	void *ptr2 = coredump_malloc(5);
+	coredump_free(ptr2);
+	ptr2 = coredump_malloc(4);
+	coredump_free(ptr);
+	coredump_free(ptr1);
+	ptr = coredump_malloc(23);
 	//循环设置页目录
 	/*
 	unsigned int page_start_address = mem_malloc(4*1024*1024);
