@@ -79,22 +79,9 @@ void init_bit_map()
 	{
 		set_bit_map(i);
 	}
-	/*
-	i = get_bit_map_first0();
-	printk("wwwwwwwww:%d\n",i);
-	unsigned int * p = pgalloc();
-	i = get_bit_map_first0();
-	printk("wwwwwwwww:%d\n",i);
-	pgalloc();
-	i = get_bit_map_first0();
-	printk("wwwwwwwww:%d\n",i);
-	pgfree(p);
-	i = get_bit_map_first0();
-	printk("wwwwwwwww:%d\n",i);
-	*/
 }
 //分配物理页的操作
-unsigned int * pgalloc()
+unsigned int  pgalloc()
 {
 	unsigned int tmp = get_bit_map_first0();
 	if(tmp == -1)
@@ -131,7 +118,7 @@ unsigned int obtain_total_memsize()
 	int i = 0;
 	for(i=0;i < bios_info.mem_bios_size;i++)
 	{
-		printk("%x~%x,type:%d\n",(p+i)->baseAddr_low,((p+i)->baseAddr_low+(p+i)->regionLen_low),(p+i)->type);
+		//printk("%x~%x,type:%d\n",(p+i)->baseAddr_low,((p+i)->baseAddr_low+(p+i)->regionLen_low),(p+i)->type);
 		if((p+i)->type==MEM_TYPE_1)
 		{
 			if((p+i)->baseAddr_low + (p+i)->regionLen_low > total)
@@ -150,8 +137,8 @@ unsigned int* init_page_dic_array(unsigned int phy_address)
 	{
 		tmp = tmp + 0x1000;
 	}
-	memset(tmp,0,4*1024);
-	return tmp;
+	memset((void *)tmp,0,4*1024);
+	return (unsigned int *)tmp;
 }
 //初始化页面录的某一项,page_dic_address页目录的物理地址,index页目录的选项,base_address页表项的物理地址,
 //present页是否在缓存中,canWrite可写,userPro是否普通用户的权限,avail
@@ -243,8 +230,8 @@ unsigned int * init_page_table_array(unsigned int phy_address)
 	{
 		tmp = tmp + 0x1000;
 	}
-	memset(tmp,0,4*1024);
-	return (int *)tmp;
+	memset((void *)tmp,0,4*1024);
+	return (unsigned int *)tmp;
 }
 //初始化页面表的某一项
 void init_page_table_index(unsigned int * page_table_address,int index,unsigned int * base_address,
@@ -296,7 +283,9 @@ void init_page_manage()
 {
 	current_address = KERNERL_PAGE_DIC_ADDRESS;
 	//初始化页目录
-	page_mem_dic = (unsigned int)mem_malloc(4*1024);
+	page_mem_dic = (unsigned int*)mem_malloc(4*1024);
+	unsigned int pageSize = KERNERL_DUMP_MEMBEGIN/ (4*1024*1024);
+	unsigned int page_start_address = (unsigned int)mem_malloc(4*1024*pageSize);
 	init_page_dic_array(KERNERL_PAGE_DIC_ADDRESS);
 	//计算实际物理内存的frame数
 	unsigned int totalMemSize = obtain_total_memsize();
@@ -308,68 +297,27 @@ void init_page_manage()
 	}
 	//分配指向bitmap的指针
 	bit_mapinfo.bit_map_ptr = mem_malloc(bit_mapinfo.bit_map_size);
-	//mem_malloc(4*1024*1024);
 	init_bit_map();//初始化bitmap
-	unsigned int pageSize = KERNERL_DUMP_MEMBEGIN/ (4*1024);
-	coredump_init(4*1024,0,1024);
-	/*
-	void * ptr = coredump_malloc(10);
-	void *ptr1 = coredump_malloc(12);
-	void *ptr2 = coredump_malloc(5);
-	coredump_free(ptr2);
-	ptr2 = coredump_malloc(4);
-	coredump_free(ptr);
-	coredump_free(ptr1);
-	ptr = coredump_malloc(23);
-	*/
+	coredump_init(4*1024*1024,KERNERL_DUMP_MEMBEGIN,KERNERL_MEMSIZE);//初始化4m的空间用来进行内核的内存的管理
 	//循环设置页目录
-	/*
-	unsigned int page_start_address = mem_malloc(4*1024*1024);
-	unsigned int i,j,pageSize_counter =0;
-	unsigned int actual_phy_address = 0;
-	char flag = 0;
-	for(i=0;i < 1024;i++)
+	unsigned int actual_phy_address = 0,pageSize_counter =0;
+	for(int i=0;i < pageSize;i++)
 	{
 		unsigned int page_table_address = page_start_address + i*4*1024;//获得页目录的地址
-		init_page_dic_index(page_mem_dic,i,page_table_address,1,1,0,0);
-		//初始化page table
-		init_page_table_array(page_table_address);
-		for(j=0;j < 1024;j++)//循环设置页表项
+		init_page_dic_index((unsigned int *)page_mem_dic,i,(unsigned int *)page_table_address,1,1,0,0);
+		for(int j=0;j < 1024;j++)
 		{
-			//判断初始化条件
-			if(pageSize_counter >= pageSize)
-			{
-				flag = 1;
-				break;//初始化完毕，跳出循环
-			}
-			//初始化表项
-			actual_phy_address = pageSize_counter * 4 * 1024;
-			init_page_table_index(page_table_address,j,actual_phy_address,1,1,0,0,0);
+			actual_phy_address = pageSize_counter * 4*1024;
+			init_page_table_index((unsigned int *)page_table_address,j,(unsigned int *)actual_phy_address,1,1,0,0,0);
 			pageSize_counter ++;
 		}
-		if(flag)
-		{
-			break;
-		}
 	}
-	//启用分页
+	
 	page_flush();
-	*/
 }
 void * mem_malloc(unsigned int size)
 {
 	void * tmp = (void *)current_address;
 	current_address += size;
 	return tmp;
-}
-//给定地址是否在保留的地址内
-int isAddressReserve(unsigned int address,struct mem_bios_info_struct *ptr)
-{
-	struct mem_bios_info *p = ptr->mem_bios_ptr;
-	unsigned int size = ptr -> mem_bios_size;
-	for(int i=0;i < size;i++)
-	{
-		//if(address > p->)
-	}
-	return -1;
 }

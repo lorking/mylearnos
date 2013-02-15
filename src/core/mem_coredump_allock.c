@@ -87,7 +87,7 @@ void  coredump_init(unsigned int size,unsigned int mem_begin_addr,unsigned int m
 	header.mem_begin_addr = mem_begin_addr;
 	header.mem_end_addr = mem_end_addr;
 	header.tail = NULL;
-	memset(header.head,0,size);
+	//memset(header.head,0,size);
 }
 //查找第一个复合内存大小的节点块
 int findFirstSuitIndex(unsigned int size)
