@@ -114,6 +114,26 @@ int findFirstSuitIndex(unsigned int size)
 	}while(nxt != -1);
 	return -1;
 }
+//查找第一个复合frame大小的节点块
+int findFisrtSuitFrame()
+{
+	struct coredump_struct * ptr = header.head;
+	int nxt = 0;
+	do{
+		ptr = header.head + nxt;
+		combination(ptr);//合并相邻的节点
+		if(ptr -> free ==1)
+		{
+			unsigned tmp = ptr -> address & 0xfffff000;
+			if(ptr -> size >= ptr->address - tmp +4*1024)
+			{
+				return ptr - header.head;
+			}
+		}
+		nxt = ptr -> nxt;
+	}while(nxt != -1);
+	return -1;
+}
 //查找最高的内存的地址
 unsigned int findTheHighAddress()
 {
@@ -150,7 +170,99 @@ unsigned int findFirstUnUsedIndex()
 //按page对齐分配方式分配内存
 void * coredump_mallocpage()
 {
-	//先判断是否为
+	//先判断是否为刚开始分配,刚开始分配的话就把起始地址取整
+	if(header.lenth==0)
+	{
+		unsigned int tmp = header.mem_begin_addr & 0xfffff000;
+		if(tmp != header.mem_begin_addr)
+		{
+			header.mem_begin_addr = tmp + 0x1000; 
+		}
+		return coredump_malloc(4*1024);
+	}
+	struct coredump_struct * ptr = header.head;
+	//查找第一个符合内存的节点
+	int index = findFisrtSuitFrame();
+	//节点不存在,直接创建一个新的节点
+	if(index == -1)
+	{
+		//查找最高位置的内存
+		unsigned int highAddress = findTheHighAddress();
+		//判断要分配的内存是否已经超过地址上线,如果是的话分配失败
+		if(highAddress + 4*1024 > header.mem_end_addr)
+		{
+			return NULL;
+		}
+		//找到一个空白的节点,赋上相应的值
+		int in = findFirstUnUsedIndex();
+		ptr = ptr + in;
+		ptr -> flag = 1;
+		ptr -> free = 0;
+		ptr -> nxt = -1;
+		ptr -> size = 4*1024;
+		ptr -> address = highAddress;
+		//设置tail及tail的下个节点
+		if(header.tail == NULL)
+		{
+			header.tail = ptr;
+		}else
+		{
+			header.tail->nxt = in;
+			header.tail = ptr;
+		}
+		return (void *)highAddress;
+	}
+	//复用新的节点
+	ptr = ptr + index;
+	//如果不恰好的话,先分裂出去一个小部分
+	unsigned int tmp  = ptr->address;
+	unsigned int highAddress = tmp;
+	if(tmp!=(tmp & 0xfffff000))
+	{
+		tmp += 0x1000;
+		tmp = tmp - ptr->address;
+		int unusedIndex = findFirstUnUsedIndex();
+		struct coredump_struct * n_ptr = (header.head + unusedIndex);
+		ptr -> flag = 1;
+		ptr -> free = 1;
+		n_ptr -> nxt = ptr-> nxt;
+		ptr -> nxt = unusedIndex;
+		n_ptr -> size = ptr -> size - tmp;
+		ptr -> size = tmp;
+		ptr -> address = highAddress;
+		n_ptr -> address = (highAddress & 0xfffff000) + 0x1000;
+		n_ptr -> flag = 1;
+		n_ptr -> free = 1;
+		if(header.tail == ptr)
+		{
+			header.tail = n_ptr;
+		}
+		ptr = n_ptr;
+	}
+	highAddress = ptr->address;
+	if(ptr->size == 1024 * 4)
+	{
+		ptr -> free = 0;
+		return (void *)highAddress;
+	}
+	//从根部开始分裂
+	int unusedIndex = findFirstUnUsedIndex();
+	struct coredump_struct * n_ptr = (header.head + unusedIndex);
+	ptr -> flag = 1;
+	ptr -> free = 0;
+	n_ptr -> nxt = ptr -> nxt;
+	ptr -> nxt = unusedIndex;
+	n_ptr -> size = ptr -> size - 4*1024;
+	ptr -> size = 4*1024;
+	ptr -> address = highAddress;
+	n_ptr -> address = ptr -> address + 4*1024;
+	n_ptr -> flag = 1;
+	n_ptr -> free = 1;
+	if(header.tail == ptr)
+	{
+		header.tail = n_ptr;
+	}
+	return (void *)highAddress;
 }
 //分配内存
 void * coredump_malloc(unsigned short size)
