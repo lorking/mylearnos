@@ -219,6 +219,7 @@ void * coredump_mallocpage()
 	unsigned int highAddress = tmp;
 	if(tmp!=(tmp & 0xfffff000))
 	{
+		tmp = tmp & 0xfffff000;
 		tmp += 0x1000;
 		tmp = tmp - ptr->address;
 		int unusedIndex = findFirstUnUsedIndex();
