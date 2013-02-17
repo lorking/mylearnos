@@ -147,6 +147,11 @@ unsigned int findFirstUnUsedIndex()
 	creatNewNode();//创建个新的节点
 	return header.lenth-1;
 }
+//按page对齐分配方式分配内存
+void * coredump_mallocpage()
+{
+	//先判断是否为
+}
 //分配内存
 void * coredump_malloc(unsigned short size)
 {

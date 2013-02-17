@@ -2,8 +2,15 @@
 #include <system.h>
 #include <vedio.h>
 #include <mem_coredump_allock.h>
+#include <memframe.h>
 unsigned int current_address;//当先分配地址的位置
 unsigned int *page_mem_dic;//页面目录的指针
+//内存分隔的地址间隔
+struct mem_split_address{
+	unsigned int core_static_mem_address;//静态区域的地址
+	unsigned int core_dump_begin_address;//堆内存的起始位置
+	unsigned int user_address;
+} split_address;
 //保存页表的一些信息
 struct bit_map_info_struct{
 	char *bit_map_ptr;//用来分配frame的bitmap的指针,内存的大小
@@ -70,17 +77,20 @@ unsigned int get_bit_map_first0()
 	return -1;
 }
 //清空所有bitmap,并把core所占的物理frame设置为非可应用的
+/*
 void init_bit_map()
 {
 	memset(bit_mapinfo.bit_map_ptr,0,bit_mapinfo.bit_map_size);
-	unsigned int coreSize = KERNERL_DUMP_MEMBEGIN/(4*1024);
+	unsigned int coreSize = split_address.core_dump_begin_address/(4*1024);
 	int i;
 	for(i=0;i < coreSize;i++)
 	{
 		set_bit_map(i);
 	}
 }
+*/
 //分配物理页的操作
+/*
 unsigned int  pgalloc()
 {
 	unsigned int tmp = get_bit_map_first0();
@@ -91,6 +101,7 @@ unsigned int  pgalloc()
 	set_bit_map(tmp);//置位物理页的操作
 	return tmp*4*1024;
 }
+*/
 //获得pagedic某一项的指针
 unsigned int * get_dic_ptr(unsigned int *ptr,unsigned int address)
 {
@@ -98,12 +109,14 @@ unsigned int * get_dic_ptr(unsigned int *ptr,unsigned int address)
 	return (ptr + address);
 }
 //释放物理页的操作
+/*
 void pgfree(unsigned int *address)
 {
 	unsigned int tmp = (unsigned int)address;
 	tmp = tmp / (4 * 1024);
 	clear_bit_map(tmp);
 }
+*/
 //设置内存信息
 void set_mem_bios_info(int size,struct mem_bios_info *p)
 {
@@ -281,12 +294,12 @@ void clear_page_dirty(unsigned int * address,int index)
 //初始化分页内存的管理
 void init_page_manage()
 {
-	current_address = KERNERL_PAGE_DIC_ADDRESS;
+	current_address = split_address.core_static_mem_address;
 	//初始化页目录
 	page_mem_dic = (unsigned int*)mem_malloc(4*1024);
-	unsigned int pageSize = KERNERL_DUMP_MEMBEGIN/ (4*1024*1024);
+	unsigned int pageSize = split_address.core_dump_begin_address/ (4*1024*1024);
 	unsigned int page_start_address = (unsigned int)mem_malloc(4*1024*pageSize);
-	init_page_dic_array(KERNERL_PAGE_DIC_ADDRESS);
+	init_page_dic_array(split_address.core_static_mem_address);
 	//计算实际物理内存的frame数
 	unsigned int totalMemSize = obtain_total_memsize();
 	bit_mapinfo.frame_count = totalMemSize / (4 * 1024);
@@ -297,8 +310,8 @@ void init_page_manage()
 	}
 	//分配指向bitmap的指针
 	bit_mapinfo.bit_map_ptr = mem_malloc(bit_mapinfo.bit_map_size);
-	init_bit_map();//初始化bitmap
-	coredump_init(4*1024*1024,KERNERL_DUMP_MEMBEGIN,KERNERL_MEMSIZE);//初始化4m的空间用来进行内核的内存的管理
+	//init_bit_map();//初始化bitmap
+	coredump_init(4*1024*1024,split_address.core_dump_begin_address,split_address.user_address);//初始化4m的空间用来进行内核的内存的管理
 	//循环设置页目录
 	unsigned int actual_phy_address = 0,pageSize_counter =0;
 	for(int i=0;i < pageSize;i++)

@@ -8,12 +8,14 @@ tmp/boot2.img:boot/boot2.asm
 	nasm -f bin boot/boot2.asm -o tmp/boot2.img
 tmp/kernel.img:tmp/kernel.bin
 	objcopy -R .pdr -R .comment -R .note -S -O binary tmp/kernel.bin tmp/kernel.img
-tmp/kernel.bin:tmp/entry.o tmp/kernel.o tmp/vedio.o tmp/io.o ldfile/linker.ld tmp/system.o tmp/idt.o tmp/key.o tmp/mem.o tmp/mem_coredump_allock.o
+tmp/kernel.bin:tmp/entry.o tmp/kernel.o tmp/vedio.o tmp/io.o ldfile/linker.ld tmp/system.o tmp/idt.o tmp/key.o tmp/mem.o tmp/mem_coredump_allock.o tmp/memframe.o
 	ld -T ldfile/linker.ld -o tmp/kernel.bin tmp/entry.o tmp/kernel.o tmp/vedio.o tmp/io.o tmp/system.o tmp/idt.o tmp/key.o tmp/mem.o tmp/mem_coredump_allock.o
 tmp/mem_coredump_allock.o:src/header/mem_coredump_allock.h src/core/mem_coredump_allock.c
 	gcc -c -o tmp/mem_coredump_allock.o src/core/mem_coredump_allock.c  -std=c99 -nostdinc -std=c99 -fno-builtin -fno-stack-protector -I./src/header
-tmp/mem.o:src/core/mem.c src/header/mem.h src/header/mem_coredump_allock.h
+tmp/mem.o:src/core/mem.c src/header/mem.h src/header/mem_coredump_allock.h src/header/memframe.h
 	gcc -c -o tmp/mem.o src/core/mem.c -nostdinc -fno-builtin -std=c99 -fno-stack-protector -I./src/header
+tmp/memframe.o:src/core/memframe.c src/header/memframe.h
+	gcc  -c -o tmp/memframe.o src/core/memframe.c -nostdinc -fno-builtin -std=c99 -fno-stack-protector -I./src/header
 tmp/vedio.o:src/core/vedio.c src/header/vedio.h src/header/io.h src/header/system.h
 	gcc -c -o tmp/vedio.o src/core/vedio.c -nostdinc -fno-builtin -std=c99 -fno-stack-protector -I./src/header
 tmp/entry.o:src/core/entry.asm
