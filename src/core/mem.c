@@ -234,11 +234,11 @@ void init_page_manage()
 		}
 	}
 	page_flush();
+	/*
 	unsigned int a = coredump_malloc(1024*8);
-	printk("%x\n",a);
 	coredump_free((void *)a);
 	a = coredump_mallocpage();
-	printk("%x\n",a);
+	*/
 }
 void * mem_malloc(unsigned int size)
 {

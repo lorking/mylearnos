@@ -4,12 +4,15 @@
 #include <idt.h>
 #include <key.h>
 extern void gdt_flush();//刷新gdt的操作
+extern void tss_flush();//刷新tss的操作
 //gdt表
-struct gdt_entry gdt[5];
+struct gdt_entry gdt[6];
 struct gdt_ptr gp;
 //ldt表
 struct idt_entry idt[256];
 struct idt_ptr	idtp;
+//tss 字段的入口地址
+struct tss_descript tss_entry;
 //memory link address
 unsigned int meminfo_dress;
 unsigned int meminfo_size;
@@ -25,10 +28,22 @@ void gdt_set_table(int index,unsigned int base,unsigned int limit,unsigned char 
 	gdt[index].granularity |= (gran & 0xF0);
 	gdt[index].granularity = gran;
 }
+//设置tss的操作
+void write_tss(int index,unsigned short ss0,unsigned int esp0)
+{
+	unsigned int base = (unsigned int)&tss_entry;
+	unsigned int limit = base + sizeof(tss_entry);
+	gdt_set_table(index,base,limit,0xe9,0x00);
+	memset(&tss_entry,0,sizeof(tss_entry));
+	tss_entry.ss0=ss0;
+	tss_entry.esp0=esp0;
+	tss_entry.cs   = 0x0b;
+	tss_entry.ss = tss_entry.ds = tss_entry.es = tss_entry.fs = tss_entry.gs = 0x13;
+}
 //gdt初始化的操作
 void gdt_init()
 {
-	gp.limit = (sizeof(struct gdt_entry) * 5) - 1;
+	gp.limit = (sizeof(struct gdt_entry) * 6) - 1;
 	gp.base = &gdt;
 	gdt_set_table(0,0,0,0,0);//NULL segment
 	gdt_set_table(1,0,0xFFFFFFFF,0x9A,0xCF);//Code segment
